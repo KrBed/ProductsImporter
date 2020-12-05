@@ -1,0 +1,28 @@
+{
+    "require": {
+        "phpoffice/phpspreadsheet": "^1.15",
+        "vlucas/phpdotenv": "^5.2",
+        "monolog/monolog": "^2.1",
+        "greeflas/php-image-downloader": "dev-master"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "8",
+        "mockery/mockery": "^1.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "ProductsImporter\\":"src/",
+            "ProductsImporter\\Services\\": "src/Services",
+            "ProductsImporter\\Db\\": "src/Db",
+            "ProductsImporter\\Classes\\": "src/Classes",
+            "ProductsImporter\\Utils\\": "src/Classes",
+            "ProductsImporter\\Repositories\\": "src/Repositories"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\" : "tests/"
+        }
+    }
+
+}

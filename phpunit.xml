@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/8.0/phpunit.xsd" bootstrap="vendor/autoload.php"
+         verbose="true">
+    <php>
+        <const name="PHPUNIT_IS_RUNNING" value="true"/>
+        <const name="PHPUNIT_TEST_EXTERNAL_CONNECTION" value="true"/>
+        <const name="PHPUNIT_MOCK_API_DATA" value="true"/>
+    </php>
+    <testsuites>
+        <testsuite name="default">
+            <directory suffix="Test.php">tests</directory>
+        </testsuite>
+    </testsuites>
+    <filter>
+        <whitelist processUncoveredFilesFromWhitelist="true">
+            <directory suffix=".php">src</directory>
+        </whitelist>
+    </filter>
+</phpunit>
+

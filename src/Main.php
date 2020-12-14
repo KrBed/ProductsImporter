@@ -35,7 +35,7 @@ class Main
      */
     public static function execute($argv = [])
     {
-    //self::checkIfFileOk($argv);
+    self::checkIfFileOk($argv);
 
         DatabaseConnection::checkConnection();
 
@@ -98,9 +98,9 @@ class Main
      */
     private static function getFileName($argv = [])
     {
-//    if (count($argv) !== 1) {
-//      throw new \Exception('Only one file can be added');
-//    }
+    if (count($argv) !== 1) {
+      throw new \Exception('Only one file can be added');
+    }
 
         return $argv[1];
     }

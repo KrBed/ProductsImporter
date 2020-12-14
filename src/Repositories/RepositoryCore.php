@@ -123,10 +123,8 @@ class RepositoryCore implements IRepositoryInterface {
         $statement->setFetchMode(PDO::FETCH_ASSOC);
         $count = $statement->rowCount();
         if ($count > 0) {
-            $obj = $statement->fetch();
-            $this->data = $obj;
+          return  $statement->fetch();
 
-            return $this;
         } else {
             return false;
         }
@@ -257,6 +255,47 @@ class RepositoryCore implements IRepositoryInterface {
 
         return $statement->fetchAll();
     }
+
+
+  /**
+   * delete record
+   *
+   * @param string $table table name
+   * @param array $where array key => value
+   */
+  public function delete($table, $where)
+  {
+
+    $data = array_values($where);
+    foreach ($data as $key) {
+      $val = '%'.$key.'%';
+      $value[] = $val;
+    }
+    //grab keys
+    $columns = array_keys($where);
+
+    foreach ($columns as $key) {
+      $keys = $key." LIKE ?";
+      $mark[] = $keys;
+    }
+    $count = count($where);
+    if ($count > 1) {
+      $joinParameters = implode(' OR  ', $mark);
+      $statement = self::$db->prepare("SELECT * from $table WHERE $joinParameters");
+    } else {
+      $joinParameters = implode('', $mark);
+      $statement = self::$db->prepare("SELECT * from $table WHERE $joinParameters");
+    }
+
+    try {
+      $statement->execute($value);
+      return true;
+    }
+    catch (PDOException $exception) {
+      $this->setErrorMessage($exception->getMessage());
+      throw $exception;
+    }
+  }
 
     /**
      * gets max values from selected table columns

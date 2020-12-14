@@ -10,6 +10,7 @@ class Feature
   private $id;
   private $name;
   private $position;
+  private $parentId;
 
     /**
      * @return mixed
@@ -26,7 +27,7 @@ class Feature
     {
         $this->position = $position;
     }
-  private $parentId;
+
 
   public function __construct($name)
   {

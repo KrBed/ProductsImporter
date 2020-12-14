@@ -31,26 +31,6 @@ class Category {
      * @param  int  $deep
      * @return array;
      */
-    public static function importPaths(array $categoryPaths, $categoryCollection = [], $deep = 0)
-    {
-        // loop for every node
-        foreach ($categoryPaths as $path) {
-            if (empty($path)) {
-                continue;
-            }
-            // check if category exists
-            if (!isset($categoryCollection[$path[0]])) {
-                $categoryCollection[$path[0]] = new Category($path[0]);
-            }
-
-            // prepre childs for recursion, first element is always handled node
-            // cut first node (we already commited him)
-            $slicedArray = [array_slice($path, 1)];
-            $categoryCollection[$path[0]]->appendChilds(self::importPaths($slicedArray, $categoryCollection[$path[0]]->getChilds(), $deep + 1));
-        }
-
-        return $categoryCollection;
-    }
 
     /**
      * @return mixed

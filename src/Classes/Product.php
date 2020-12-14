@@ -493,24 +493,4 @@ class Product
     $this->attachments = $attachments;
   }
 
-  /**
-   * returns data for ml_product_lang table in Db
-   * @param $productId
-   * @return array
-   */
-  public function getProductLangData($productId)
-  {
-    return  [
-      'id_product'         => $productId,
-      'id_shop'            => $_ENV['SHOP_ID'],
-      'id_lang'            => $_ENV['LANG_ID'],
-      'description'        => $this->getLongDiscription(),
-      'description_short'  => $this->getIndexLupus(),
-      'link_rewrite'       => $this->getLinkRewrite(),
-      'name'               => $this->getProductName(),
-      'delivery_out_stock' => $_ENV['DELIVERY_OUT_STOCK'],
-    ];
-  }
-
-
 }

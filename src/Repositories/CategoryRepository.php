@@ -88,7 +88,7 @@ class CategoryRepository extends RepositoryCore {
         ];
         $this->insert("{$_ENV['MYSQL_PREFIX']}category_lang", $mlCategoryLangData);
         $this->insert("{$_ENV['MYSQL_PREFIX']}category", $mlCategoryData);
-        $this->insert("{$_ENV['MYQL_PREFIX']}category_shop", $mlCategoryShopData);
+        $this->insert("{$_ENV['MYSQL_PREFIX']}category_shop", $mlCategoryShopData);
         $this->addCategoryGroups($id, $groups);
 
         return CategoryHelper::setNewCategoryDisplayOptions($category->getId(), $options['levelDepth'] + 1);

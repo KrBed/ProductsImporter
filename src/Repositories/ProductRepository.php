@@ -33,6 +33,25 @@ class ProductRepository extends RepositoryCore
   }
 
   /**
+   * @param int $idStock
+   * @param $productId
+   * @param Product $product
+   * @return array
+   */
+  public static function getSingleQuantityStockAvailableData(int $idStock, $productId, Product $product): array
+  {
+    $data = ['id_stock_available'   => $idStock,
+             'id_product'           => $productId,
+             'id_product_attribute' => $product->getAttributeId(),
+             'id_shop'              => $_ENV['SHOP_ID'],
+             'id_shop_group'        => 0,
+             'quantity'             => $product->getQuantity() > 0 ? $product->getQuantity() : $_ENV['QUANTITY'],
+             'out_of_stock'         => $_ENV['OUT_OF_STOCK']
+    ];
+    return $data;
+  }
+
+  /**
    * main function to add products to Db
    * @param $products
    * @throws Exception
@@ -61,7 +80,7 @@ class ProductRepository extends RepositoryCore
       $exists = $this->checkExist("{$_ENV['MYSQL_PREFIX']}product_lang", ['name' => $product->getProductName()]);
       if ($exists) {
         $product->setId($exists['data']['id_product']);
-        $this->ckechProductInInternalOrderIdTable($product);
+        $this->checkProductInInternalOrderIdTable($product);
         $this->updateProduct($product, $exists['id_product']);
       } else {
         $this->addProduct($product);
@@ -81,53 +100,11 @@ class ProductRepository extends RepositoryCore
     $filteredProductCategories = CategoryHelper::filterProductCategories(Registry::get('categories'), $product->getCategories());
     $product->setCategories($filteredProductCategories);
     $defaultProductCategoryId = CategoryHelper::getDefaultCategoryId($product->getCategories()[0]);
+    $product->setDefaultCategoryId($defaultProductCategoryId);
 
-
-    $mlProductLangData = $product->getProductLangData($productId);
-    $mlProductData = [
-      'id_product'                => $productId,
-      'id_category_default'       => $defaultProductCategoryId,
-      'id_shop_default'           => $_ENV['SHOP_DEFAULT_ID'],
-      'cache_default_attribute'   => $product->getId(),
-      'ean13'                     => $product->getEAN(),
-      'upc'                       => $product->getUpc(),
-      'quantity'                  => $product->getQuantity() > 0 ? $product->getQuantity() : $_ENV['QUANTITY'],
-      'minimal_quantity'          => $_ENV['MINIMAL_QUANTITY'],
-      'additional_delivery_times' => $_ENV['ADDITIONAL_DELIVERY_TIMES'],
-      'active'                    => $_ENV['ACTIVE'],
-      'out_of_stock'              => $_ENV['OUT_OF_STOCK'],
-      'available_date'            => AppHelper::getActualDate(),
-      'show_price'                => $_ENV['SHOW_PRICE'],
-      'price'                     => $product->getNettoPriceEXWPLN(),
-      'reference'                 => $product->getIndexLupus(),
-      'width'                     => $product->getDimensionAfterFoldX(),
-      'height'                    => $product->getDimensionAfterFoldY(),
-      'depth'                     => $product->getDimensionAfterFoldZ(),
-      'weight'                    => $product->getWeight(),
-      'date_upd'                  => AppHelper::getActualDate(),
-      'indexed'                   => 1,
-      'pack_stock_type'           => $_ENV['PACK_STOCK_TYPE'],
-      'state'                     => $_ENV['STATE'],
-    ];
-
-    $mlProductShopData = [
-      'id_product'              => $product->getId(),
-      'id_shop'                 => $_ENV['SHOP_ID'],
-      'id_category_default'     => $product->getDefaultCategoryId(),
-      'id_tax_rules_group'      => $_ENV['DEFAULT_TAX_RULE'],
-      'on_sale'                 => $_ENV['ON_SALE'],
-      'online_only'             => $_ENV['ONLINE_ONLY'],
-      'ecotax'                  => $_ENV['ECO_TAX'],
-      'minimal_quantity'        => $_ENV['MINIMAL_QUANTITY'],
-      'price'                   => $product->getNettoPriceEXWPLN(),
-      'active'                  => $_ENV['ACTIVE'],
-      'available_for_order'     => $_ENV['AVAILABLE_FOR_ORDER'],
-      'available_date'          => AppHelper::getActualDate(),
-      'cache_default_attribute' => $product->getId(),
-      'show_price'              => $_ENV['SHOW_PRICE'],
-      'date_upd'                => AppHelper::getActualDate(),
-      'pack_stock_type'         => $_ENV['PACK_STOCK_TYPE'],
-    ];
+    $mlProductLangData = ProductHelper::getProductLangData($product);
+    $mlProductData = ProductHelper::getProductData($product);
+    $mlProductShopData = ProductHelper::getProductShopData($product);
 
     $this->update("{$_ENV['MYSQL_PREFIX']}product_lang", $mlProductLangData, 'id_product', $productId);
     $this->update("{$_ENV['MYSQL_PREFIX']}product", $mlProductData, 'id_product', $productId);
@@ -143,9 +120,9 @@ class ProductRepository extends RepositoryCore
     }
     $this->updateProductQuantity($product);
 
-//    //add product internalColumnId
-//    $this->addProductInternalColumnId($product);
-//    //insert product images
+        //add product internalColumnId
+    $this->updateProductInternalColumnId($product);
+    //insert product images
 //    $images = ImageService::FilterImages($product);
 //    $this->imageRepository->insertImages($images, $product->getId());
   }
@@ -207,53 +184,10 @@ class ProductRepository extends RepositoryCore
     $productId = $this->getMaxIdFromTable("{$_ENV['MYSQL_PREFIX']}product", 'id_product') + 1;
     $product->setId($productId);
 
-    $mlProductLangData = $product->getProductLangData($product->getId());
-    $mlProductData = [
-      'id_product'                => $product->getId(),
-      'id_category_default'       => $product->getDefaultCategoryId(),
-      'id_shop_default'           => $_ENV['SHOP_DEFAULT_ID'],
-      'id_tax_rules_group'        => $_ENV['DEFAULT_TAX_RULE'],
-      'cache_default_attribute'   => $product->getId(),
-      'ean13'                     => $product->getEAN(),
-      'upc'                       => $product->getUpc(),
-      'quantity'                  => $product->getQuantity() > 0 ? $product->getQuantity() : $_ENV['QUANTITY'],
-      'minimal_quantity'          => (int)$_ENV['MINIMAL_QUANTITY'],
-      'additional_delivery_times' => $_ENV['ADDITIONAL_DELIVERY_TIMES'],
-      'active'                    => (int)$_ENV['ACTIVE'],
-      'out_of_stock'              => (int)$_ENV['OUT_OF_STOCK'],
-      'available_date'            => AppHelper::getActualDate(),
-      'show_price'                => (int)$_ENV['SHOW_PRICE'],
-      'price'                     => $product->getNettoPriceEXWPLN(),
-      'reference'                 => $product->getIndexLupus(),
-      'width'                     => $product->getDimensionAfterFoldX(),
-      'height'                    => $product->getDimensionAfterFoldY(),
-      'depth'                     => $product->getDimensionAfterFoldZ(),
-      'weight'                    => $product->getWeight(),
-      'date_add'                  => AppHelper::getActualDate(),
-      'date_upd'                  => AppHelper::getActualDate(),
-      'pack_stock_type'           => $_ENV['PACK_STOCK_TYPE'],
-      'state'                     => $_ENV['STATE'],
-    ];
+    $mlProductLangData = ProductHelper::getProductLangData($product);
+    $mlProductData = ProductHelper::getProductData($product);
 
-    $mlProductShopData = [
-      'id_product'              => $product->getId(),
-      'id_shop'                 => $_ENV['SHOP_ID'],
-      'id_category_default'     => $product->getDefaultCategoryId(),
-      'id_tax_rules_group'      => $_ENV['DEFAULT_TAX_RULE'],
-      'on_sale'                 => $_ENV['ON_SALE'],
-      'online_only'             => $_ENV['ON_SALE'],
-      'ecotax'                  => $_ENV['ECO_TAX'],
-      'minimal_quantity'        => $_ENV['MINIMAL_QUANTITY'],
-      'price'                   => $product->getNettoPriceEXWPLN(),
-      'active'                  => $_ENV['ACTIVE'],
-      'available_for_order'     => $_ENV['AVAILABLE_FOR_ORDER'],
-      'available_date'          => AppHelper::getActualDate(),
-      'cache_default_attribute' => $product->getId(),
-      'show_price'              => $_ENV['SHOW_PRICE'],
-      'date_add'                => AppHelper::getActualDate(),
-      'date_upd'                => AppHelper::getActualDate(),
-      'pack_stock_type'         => $_ENV['PACK_STOCK_TYPE'],
-    ];
+    $mlProductShopData = ProductHelper::getProductShopData($product);
 
     $this->insert("{$_ENV['MYSQL_PREFIX']}product_lang", $mlProductLangData);
     $this->insert("{$_ENV['MYSQL_PREFIX']}product", $mlProductData);
@@ -286,7 +220,7 @@ class ProductRepository extends RepositoryCore
    */
   public function updateOrDeleteProductCategoriesRelations($productId, $categories): void
   {
-    $filteredCategories = $this->deleteExpendableProductCategoriesRelations($categories,$productId);
+    $filteredCategories = $this->deleteExpendableProductCategoriesRelations($categories, $productId);
     $this->updateProductCategoriesRelations($categories, $filteredCategories, $productId);
   }
 
@@ -302,14 +236,12 @@ class ProductRepository extends RepositoryCore
 
   private function addProductQuantity(Product $product)
   {
-    $sumOfquantity = $product->getQuantity() > 0 ? $product->getQuantity() : $_ENV['QUANTITY'];
-    foreach ($product->getAttributes() as $attribute) {
-      $sumOfquantity += $attribute->getQuantity() > 0 ? $product->getQuantity() : $_ENV['QUANTITY'];
-    }
+    $sumOfquantity = $this->getTotalProductQuantity($product);
+
     $this->addMainQuantity($product->getId(), $sumOfquantity);
-    $this->addSingleQuantity($product, $product->getId());
+    $this->addSingleQuantity($product);
     foreach ($product->getAttributes() as $attribute) {
-      $this->addSingleQuantity($attribute, $product->getId());
+      $this->addSingleQuantity($attribute);
     }
   }
 
@@ -317,31 +249,17 @@ class ProductRepository extends RepositoryCore
    * @param Product $product
    * @param $productId
    */
-  private function addSingleQuantity(Product $product, $productId)
+  private function addSingleQuantity(Product $product)
   {
     $idStock = $this->getMaxIdFromTable("{$_ENV['MYSQL_PREFIX']}stock_available", 'id_stock_available') + 1;
-    $data = ['id_stock_available'   => $idStock,
-             'id_product'           => $productId,
-             'id_product_attribute' => $product->getAttributeId(),
-             'id_shop'              => $_ENV['SHOP_ID'],
-             'id_shop_group'        => 0,
-             'quantity'             => $product->getQuantity() > 0 ? $product->getQuantity() : $_ENV['QUANTITY'],
-             'out_of_stock'         => $_ENV['OUT_OF_STOCK']
-    ];
+    $data = ProductHelper::getSingleQuantityStockAvailableData($idStock, $product);
     $this->insert("{$_ENV['MYSQL_PREFIX']}stock_available", $data);
   }
 
   private function addMainQuantity(int $productId, $sumOfQuantity): void
   {
     $idStock = $this->getMaxIdFromTable("{$_ENV['MYSQL_PREFIX']}stock_available", 'id_stock_available') + 1;
-    $data = ['id_stock_available'   => $idStock,
-             'id_product'           => $productId,
-             'id_product_attribute' => 0,
-             'id_shop'              => $_ENV['SHOP_ID'],
-             'id_shop_group'        => 0,
-             'quantity'             => $sumOfQuantity,
-             'out_of_stock'         => $_ENV['OUT_OF_STOCK']
-    ];
+    $data = ProductHelper::getMainQuantityStockAvailableData($idStock, $productId, $sumOfQuantity);
     $this->insert("{$_ENV['MYSQL_PREFIX']}stock_available", $data);
   }
 
@@ -350,7 +268,7 @@ class ProductRepository extends RepositoryCore
    * @param array $productCategoriesRelations
    * @param $productId
    */
-  public function updateProductCategoriesRelations( $productId,$filteredCategories,$productCategories): void
+  public function updateProductCategoriesRelations($productId, $filteredCategories, $productCategories): void
   {
     foreach ($productCategories as $category) {
       $contains = false;
@@ -391,19 +309,62 @@ class ProductRepository extends RepositoryCore
 
   private function updateProductQuantity(Product $product)
   {
+    $sumOfQuantity = $this->getTotalProductQuantity($product);
+
+    $this->updateMainQuantity($product->getId(), $sumOfQuantity);
+    $this->updateSingleQuantity($product);
+    foreach ($product->getAttributes() as $attribute) {
+      $this->updateSingleQuantity($attribute);
+    }
   }
 
   /**
    * @param Product $product
    * @return false|Product
    */
-  private function ckechProductInInternalOrderIdTable(Product $product)
+  private function checkProductInInternalOrderIdTable(Product $product)
   {
-    $exists = $this->checkExist("{$_ENV['MYSQL_PREFIX']}internal_order_id",['id_global'=>$product->getGlobalId()]);
-    if($exists){
+    $exists = $this->checkExist("{$_ENV['MYSQL_PREFIX']}internal_order_id", ['id_global' => $product->getGlobalId()]);
+    if ($exists) {
       $product->setAttributeId($exists['id_attribute']);
       return $product;
     }
     return false;
+  }
+
+  /**
+   * @param Product $product
+   * @return int
+   */
+  private function getTotalProductQuantity(Product $product): int
+  {
+    $quantity = $product->getQuantity() > 0 ? $product->getQuantity() : $_ENV['QUANTITY'];
+    foreach ($product->getAttributes() as $attribute) {
+      $quantity += $attribute->getQuantity() > 0 ? $product->getQuantity() : $_ENV['QUANTITY'];
+    }
+    return $quantity;
+  }
+
+  /**
+   * @param int $productId
+   * @param int $sumOfQuantity
+   */
+  public function updateMainQuantity(int $productId, int $sumOfQuantity): void
+  {
+    $result = $this->search("{$_ENV['MYSQL_PREFIX']}stock_available", ['id_product' => $productId, 'id_product_attribute' => 0]);
+    $idStock = $result[0]['id_stock_available'];
+    $data = ProductHelper::getMainQuantityStockAvailableData($idStock, $productId, $sumOfQuantity);
+    $this->update("{$_ENV['MYSQL_PREFIX']}stock_available", $data, 'id_stock_available', $idStock);
+  }
+
+  /**
+   * @param Product $product
+   */
+  public function updateSingleQuantity(Product $product): void
+  {
+    $result = $this->search("{$_ENV['MYSQL_PREFIX']}stock_available", ['id_product' => $product->getId(), 'id_product_attribute' => $product->getAttributeId()]);
+    $idStock = $result[0]['id_stock_available'];
+    $data = ProductHelper::getSingleQuantityStockAvailableData($idStock, $product);
+    $this->update("{$_ENV['MYSQL_PREFIX']}stock_available", $data,'id_stock_available',$idStock);
   }
 }
